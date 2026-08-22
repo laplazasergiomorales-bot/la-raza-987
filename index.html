@@ -20,7 +20,7 @@
 
 body{
   margin:0;
-  font-family:Arial;
+  font-family:Arial, sans-serif;
   color:#fff;
   background:
     radial-gradient(circle at 50% 0%,#e31b2347,transparent 35%),
@@ -456,11 +456,8 @@ La Raza 98.7 FM · Santa Ana, Sonora
    CONFIGURACIÓN SUPABASE
 ================================ */
 
-const SUPABASE_URL =
-"https://rbnwtqtmllydujcvqlbe.supabase.co";
-
-const SUPABASE_ANON_KEY =
-"sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
+const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
 
 /* ================================
@@ -468,180 +465,76 @@ const SUPABASE_ANON_KEY =
 ================================ */
 
 async function registrarVisita(){
-
-  try{
-
+  try {
     let sesion = localStorage.getItem("raza_session");
 
-    if(!sesion){
-
+    if (!sesion) {
       sesion = crypto.randomUUID();
-
-      localStorage.setItem(
-        "raza_session",
-        sesion
-      );
-      console.log("LLEGUE A CREAR SESION");
-console.log("SESION CREADA:", sesion);
+      localStorage.setItem("raza_session", sesion);
+      
       const respuesta = await fetch(
         `${SUPABASE_URL}/rest/v1/visits`,
         {
-          method:"POST",
-
-          headers:{
-            "apikey":SUPABASE_ANON_KEY,
-            "Authorization":Bearer `${SUPABASE_ANON_KEY}`,
-            "Content-Type":"application/json",
-            "Prefer":"return=minimal"
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
           },
-
-          body:JSON.stringify({
-            session_id:sesion,
-            last_seen:new Date().toISOString()
+          body: JSON.stringify({
+            session_id: sesion,
+            last_seen: new Date().toISOString()
           })
         }
       );
 
-      if(!respuesta.ok){
-        console.error(
-          "Error creando visita:",
-          await respuesta.text()
-        );
+      if (!respuesta.ok) {
+        console.error("Error creando visita:", await respuesta.text());
       }
 
-    }else{
-
+    } else {
       const respuesta = await fetch(
-        ${SUPABASE_URL}/rest/v1/visits?session_id=eq.${encodeURIComponent(sesion)},
+        `${SUPABASE_URL}/rest/v1/visits?session_id=eq.${encodeURIComponent(sesion)}`,
         {
-          method:"PATCH",
-
-          headers:{
-            "apikey":SUPABASE_ANON_KEY,
-            "Authorization":Bearer ${SUPABASE_ANON_KEY},
-            "Content-Type":"application/json",
-            "Prefer":"return=minimal"
+          method: "PATCH",
+          headers: {
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
           },
-
-          body:JSON.stringify({
-            last_seen:new Date().toISOString()
+          body: JSON.stringify({
+            last_seen: new Date().toISOString()
           })
         }
       );
 
-      if(!respuesta.ok){
-        console.error(
-          "Error actualizando visita:",
-          await respuesta.text()
-        );
+      if (!respuesta.ok) {
+        console.error("Error actualizando visita:", await respuesta.text());
       }
-
     }
 
+    // Obtener total de visitas
     const total = await fetch(
-      ${SUPABASE_URL}/rest/v1/visits?select=session_id,
+      `${SUPABASE_URL}/rest/v1/visits?select=session_id`,
       {
-        method:"GET",
-
-        headers:{
-          "apikey":SUPABASE_ANON_KEY,
-          "Authorization":Bearer ${SUPABASE_ANON_KEY}
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
         }
       }
     );
 
-    if(total.ok){
-
+    if (total.ok) {
       const datos = await total.json();
-
-      visits.textContent = datos.length;
-
+      document.getElementById("visits").textContent = datos.length;
     }
 
-  }catch(error){
-
-    console.error(
-      "Error registrando visita:",
-      error
-    );
-
+  } catch (error) {
+    console.error("Error registrando visita:", error);
   }
-
-}
-
-    /* Actualizar última visita */
-
-    else{
-
-      const respuesta =
-        await fetch(
-          '${SUPABASE_URL}/rest/v1/visits?sesion=eq.${encodeURIComponent(sesion)}'
-          {
-            method:"PATCH",
-
-            headers:{
-              "apikey":SUPABASE_ANON_KEY,
-              "Authorization":
-                Bearer ${SUPABASE_ANON_KEY},
-              "Content-Type":
-                "application/json",
-              "Prefer":
-                "return=minimal"
-            },
-
-            body:JSON.stringify({
-              ultima_vez_visto:
-                new Date().toISOString()
-            })
-          }
-        );
-
-      if(!respuesta.ok){
-
-        console.error(
-          "Error actualizando visita:",
-          await respuesta.text()
-        );
-
-      }
-
-    }
-
-    /* Obtener total de visitas */
-
-    const total =
-      await fetch(
-        ${SUPABASE_URL}/rest/v1/visits?select=id,
-        {
-          method:"GET",
-
-          headers:{
-            "apikey":SUPABASE_ANON_KEY,
-            "Authorization":
-              Bearer ${SUPABASE_ANON_KEY}
-          }
-        }
-      );
-
-    if(total.ok){
-
-      const datos =
-        await total.json();
-
-      visits.textContent =
-        datos.length;
-
-    }
-
-  }catch(error){
-
-    console.error(
-      "Error registrando visita:",
-      error
-    );
-
-  }
-
 }
 
 
@@ -649,87 +542,54 @@ console.log("SESION CREADA:", sesion);
    CHAT LOCAL
 ================================ */
 
-let msgs =
-  JSON.parse(
-    localStorage.getItem("lr_msgs") || "[]"
-  );
-
+let msgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
 
 function esc(s){
-
   return String(s).replace(
     /[&<>"']/g,
     x => ({
-      "&":"&amp;",
-      "<":"&lt;",
-      ">":"&gt;",
-      '"':"&quot;",
-      "'":"&#039;"
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;"
     }[x])
   );
-
 }
-
 
 function render(){
-
-  chat.innerHTML = "";
+  const chatEl = document.getElementById("chat");
+  const messagesEl = document.getElementById("messages");
+  
+  chatEl.innerHTML = "";
 
   msgs.forEach(m => {
-
-    let d =
-      document.createElement("div");
-
+    let d = document.createElement("div");
     d.className = "msg";
-
-    d.innerHTML =
-      "<b>" +
-      esc(m.n) +
-      "</b><br><span>" +
-      esc(m.t) +
-      "</span>";
-
-    chat.appendChild(d);
-
+    d.innerHTML = "<b>" + esc(m.n) + "</b><br><span>" + esc(m.t) + "</span>";
+    chatEl.appendChild(d);
   });
 
-  messages.textContent =
-    msgs.length;
-
-  chat.scrollTop =
-    chat.scrollHeight;
-
+  messagesEl.textContent = msgs.length;
+  chatEl.scrollTop = chatEl.scrollHeight;
 }
 
-
 function sendMsg(){
+  const nameInput = document.getElementById("name");
+  const textInput = document.getElementById("text");
 
-  let n =
-    name.value.trim() ||
-    "Visitante";
+  let n = nameInput.value.trim() || "Visitante";
+  let t = textInput.value.trim();
 
-  let t =
-    text.value.trim();
+  if(!t) return;
 
-  if(!t)return;
+  msgs.push({ n: n, t: t });
 
-  msgs.push({
-    n:n,
-    t:t
-  });
+  if(msgs.length > 100) msgs.shift();
 
-  if(msgs.length > 100)
-    msgs.shift();
-
-  localStorage.setItem(
-    "lr_msgs",
-    JSON.stringify(msgs)
-  );
-
-  text.value = "";
-
+  localStorage.setItem("lr_msgs", JSON.stringify(msgs));
+  textInput.value = "";
   render();
-
 }
 
 
@@ -738,19 +598,17 @@ function sendMsg(){
 ================================ */
 
 function setStream(){
+  const streamUrlInput = document.getElementById("streamUrl");
+  const streamEl = document.getElementById("stream");
+  const radioEl = document.getElementById("radio");
+  const statusEl = document.getElementById("status");
 
-  let u =
-    streamUrl.value.trim();
+  let u = streamUrlInput.value.trim();
+  if(!u) return;
 
-  if(!u)return;
-
-  stream.src = u;
-
-  radio.load();
-
-  status.textContent =
-    "Stream configurado. Presiona ▶️ para escuchar.";
-
+  streamEl.src = u;
+  radioEl.load();
+  statusEl.textContent = "Stream configurado. Presiona ▶️ para escuchar.";
 }
 
 
@@ -758,15 +616,9 @@ function setStream(){
    ESTADO DEL REPRODUCTOR
 ================================ */
 
-radio.addEventListener(
-  "play",
-  () => {
-
-    status.textContent =
-      "Reproduciendo en este dispositivo.";
-
-  }
-);
+document.getElementById("radio").addEventListener("play", () => {
+  document.getElementById("status").textContent = "Reproduciendo en este dispositivo.";
+});
 
 
 /* ================================
@@ -774,7 +626,6 @@ radio.addEventListener(
 ================================ */
 
 render();
-
 registrarVisita();
 
 </script>
