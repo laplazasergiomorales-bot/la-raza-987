@@ -481,6 +481,7 @@ async function registrarVisita(){
         "raza_session",
         sesion
       );
+      console.log("LLEGUE A CREAR SESION");
 console.log("SESION CREADA:", sesion);
       const respuesta = await fetch(
         ${SUPABASE_URL}/rest/v1/visits,
