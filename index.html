@@ -377,8 +377,7 @@ Enviar
 </div>
 
 <p class="note">
-El chat incluido es una demostración local.
-Para hacerlo público y en tiempo real habrá que conectarlo a un backend.
+El chat está conectado en tiempo real a la base de datos.
 </p>
 
 </div>
@@ -461,7 +460,7 @@ const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
 
 /* ================================
-   REGISTRO DE VISITAS
+   REGISTRO Y CONTEO DE VISITAS
 ================================ */
 
 async function registrarVisita(){
@@ -515,21 +514,29 @@ async function registrarVisita(){
       }
     }
 
-    // Obtener total de visitas
+    // Obtener número total de registros
     const total = await fetch(
       `${SUPABASE_URL}/rest/v1/visits?select=session_id`,
       {
         method: "GET",
         headers: {
           "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Range": "0-0",
+          "Prefer": "count=exact"
         }
       }
     );
 
     if (total.ok) {
-      const datos = await total.json();
-      document.getElementById("visits").textContent = datos.length;
+      const contentRange = total.headers.get("content-range");
+      if (contentRange) {
+        const count = contentRange.split("/")[1];
+        document.getElementById("visits").textContent = count;
+      } else {
+        const datos = await total.json();
+        document.getElementById("visits").textContent = datos.length;
+      }
     }
 
   } catch (error) {
@@ -539,10 +546,8 @@ async function registrarVisita(){
 
 
 /* ================================
-   CHAT LOCAL
+   CHAT CONECTADO A SUPABASE
 ================================ */
-
-let msgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
 
 function esc(s){
   return String(s).replace(
@@ -557,24 +562,42 @@ function esc(s){
   );
 }
 
-function render(){
-  const chatEl = document.getElementById("chat");
-  const messagesEl = document.getElementById("messages");
-  
-  chatEl.innerHTML = "";
+async function cargarMensajes(){
+  try {
+    const respuesta = await fetch(
+      `${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc&limit=50`,
+      {
+        method: "GET",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      }
+    );
 
-  msgs.forEach(m => {
-    let d = document.createElement("div");
-    d.className = "msg";
-    d.innerHTML = "<b>" + esc(m.n) + "</b><br><span>" + esc(m.t) + "</span>";
-    chatEl.appendChild(d);
-  });
+    if (respuesta.ok) {
+      const msgs = await respuesta.json();
+      msgs.reverse(); // Ordenar del más antiguo al más reciente
 
-  messagesEl.textContent = msgs.length;
-  chatEl.scrollTop = chatEl.scrollHeight;
+      const chatEl = document.getElementById("chat");
+      chatEl.innerHTML = "";
+
+      msgs.forEach(m => {
+        let d = document.createElement("div");
+        d.className = "msg";
+        d.innerHTML = "<b>" + esc(m.name || "Visitante") + "</b><br><span>" + esc(m.text) + "</span>";
+        chatEl.appendChild(d);
+      });
+
+      document.getElementById("messages").textContent = msgs.length;
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+  } catch (error) {
+    console.error("Error al cargar mensajes:", error);
+  }
 }
 
-function sendMsg(){
+async function sendMsg(){
   const nameInput = document.getElementById("name");
   const textInput = document.getElementById("text");
 
@@ -583,13 +606,33 @@ function sendMsg(){
 
   if(!t) return;
 
-  msgs.push({ n: n, t: t });
+  try {
+    const respuesta = await fetch(
+      `${SUPABASE_URL}/rest/v1/messages`,
+      {
+        method: "POST",
+        headers: {
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          "Prefer": "return=minimal"
+        },
+        body: JSON.stringify({
+          name: n,
+          text: t
+        })
+      }
+    );
 
-  if(msgs.length > 100) msgs.shift();
-
-  localStorage.setItem("lr_msgs", JSON.stringify(msgs));
-  textInput.value = "";
-  render();
+    if (respuesta.ok) {
+      textInput.value = "";
+      cargarMensajes();
+    } else {
+      console.error("Error enviando mensaje:", await respuesta.text());
+    }
+  } catch (error) {
+    console.error("Error enviando mensaje:", error);
+  }
 }
 
 
@@ -625,8 +668,11 @@ document.getElementById("radio").addEventListener("play", () => {
    INICIAR
 ================================ */
 
-render();
 registrarVisita();
+cargarMensajes();
+
+// Actualizar el chat automáticamente cada 5 segundos
+setInterval(cargarMensajes, 5000);
 
 </script>
 
