@@ -317,7 +317,7 @@ audio{
 </audio>
 
 <div class="hint" id="status">
-  Falta conectar el enlace directo del stream.
+  Presiona ▶️ para iniciar la radio.
 </div>
 
 </div>
@@ -348,12 +348,10 @@ audio{
 <h2>💬 Chat en vivo</h2>
 
 <div class="chat" id="chat">
-
-<div class="msg">
-<b>La Raza 98.7</b><br>
-<span>Bienvenidos al chat.</span>
-</div>
-
+  <div class="msg">
+    <b>La Raza 98.7</b><br>
+    <span>Bienvenidos al chat en vivo.</span>
+  </div>
 </div>
 
 <div class="chatrow">
@@ -370,14 +368,14 @@ audio{
   maxlength="160"
 >
 
-<button class="btn" onclick="sendMsg()">
+<button class="btn" id="sendBtn" onclick="sendMsg()">
 Enviar
 </button>
 
 </div>
 
-<p class="note">
-El chat está conectado en tiempo real a la base de datos.
+<p class="note" id="chatNote">
+Chat conectado en tiempo real.
 </p>
 
 </div>
@@ -452,102 +450,23 @@ La Raza 98.7 FM · Santa Ana, Sonora
 <script>
 
 /* ================================
-   CONFIGURACIÓN SUPABASE
+   CONFIGURACIÓN SUPABASE Y ESTADO
 ================================ */
 
 const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
+let isListening = false;
+let localMsgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
 
-/* ================================
-   REGISTRO Y CONTEO DE VISITAS
-================================ */
-
-async function registrarVisita(){
-  try {
-    let sesion = localStorage.getItem("raza_session");
-
-    if (!sesion) {
-      sesion = crypto.randomUUID();
-      localStorage.setItem("raza_session", sesion);
-      
-      const respuesta = await fetch(
-        `${SUPABASE_URL}/rest/v1/visits`,
-        {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify({
-            session_id: sesion,
-            last_seen: new Date().toISOString()
-          })
-        }
-      );
-
-      if (!respuesta.ok) {
-        console.error("Error creando visita:", await respuesta.text());
-      }
-
-    } else {
-      const respuesta = await fetch(
-        `${SUPABASE_URL}/rest/v1/visits?session_id=eq.${encodeURIComponent(sesion)}`,
-        {
-          method: "PATCH",
-          headers: {
-            "apikey": SUPABASE_ANON_KEY,
-            "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-            "Content-Type": "application/json",
-            "Prefer": "return=minimal"
-          },
-          body: JSON.stringify({
-            last_seen: new Date().toISOString()
-          })
-        }
-      );
-
-      if (!respuesta.ok) {
-        console.error("Error actualizando visita:", await respuesta.text());
-      }
-    }
-
-    // Obtener número total de registros
-    const total = await fetch(
-      `${SUPABASE_URL}/rest/v1/visits?select=session_id`,
-      {
-        method: "GET",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Range": "0-0",
-          "Prefer": "count=exact"
-        }
-      }
-    );
-
-    if (total.ok) {
-      const contentRange = total.headers.get("content-range");
-      if (contentRange) {
-        const count = contentRange.split("/")[1];
-        document.getElementById("visits").textContent = count;
-      } else {
-        const datos = await total.json();
-        document.getElementById("visits").textContent = datos.length;
-      }
-    }
-
-  } catch (error) {
-    console.error("Error registrando visita:", error);
-  }
+function getHeaders() {
+  return {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+    "Content-Type": "application/json",
+    "Prefer": "return=representation"
+  };
 }
-
-
-/* ================================
-   CHAT CONECTADO A SUPABASE
-================================ */
 
 function esc(s){
   return String(s).replace(
@@ -562,38 +481,112 @@ function esc(s){
   );
 }
 
-async function cargarMensajes(){
+
+/* ================================
+   1. GESTIÓN DE VISITAS Y OYENTES
+================================ */
+
+async function syncUserPresence(){
   try {
-    const respuesta = await fetch(
-      `${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc&limit=50`,
-      {
-        method: "GET",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`
-        }
-      }
+    let sesion = localStorage.getItem("raza_session");
+    if (!sesion) {
+      sesion = crypto.randomUUID();
+      localStorage.setItem("raza_session", sesion);
+    }
+
+    const now = new Date().toISOString();
+
+    // Actualizar o crear presencia
+    await fetch(`${SUPABASE_URL}/rest/v1/visits`, {
+      method: "POST",
+      headers: { ...getHeaders(), "Prefer": "resolution=merge-duplicates" },
+      body: JSON.stringify({
+        session_id: sesion,
+        last_seen: now,
+        is_listening: isListening
+      })
+    });
+
+    // Consultar conteo total de visitas
+    const resVisits = await fetch(`${SUPABASE_URL}/rest/v1/visits?select=session_id`, {
+      method: "GET",
+      headers: getHeaders()
+    });
+
+    if (resVisits.ok) {
+      const dataVisits = await resVisits.json();
+      document.getElementById("visits").textContent = dataVisits.length;
+    } else {
+      // Fallback local en caso de error de Supabase
+      document.getElementById("visits").textContent = "1";
+    }
+
+    // Consultar oyentes activos (vistos en los últimos 20 segundos y con reproductor encendido)
+    const timeThreshold = new Date(Date.now() - 20000).toISOString();
+    const resListeners = await fetch(
+      `${SUPABASE_URL}/rest/v1/visits?is_listening=eq.true&last_seen=gt.${timeThreshold}&select=session_id`,
+      { method: "GET", headers: getHeaders() }
     );
 
-    if (respuesta.ok) {
-      const msgs = await respuesta.json();
-      msgs.reverse(); // Ordenar del más antiguo al más reciente
+    if (resListeners.ok) {
+      const dataListeners = await resListeners.json();
+      document.getElementById("listeners").textContent = dataListeners.length;
+    } else {
+      document.getElementById("listeners").textContent = isListening ? "1" : "0";
+    }
 
-      const chatEl = document.getElementById("chat");
-      chatEl.innerHTML = "";
+  } catch (error) {
+    console.warn("Fallo de red al sincronizar presencia:", error);
+    document.getElementById("visits").textContent = "1";
+    document.getElementById("listeners").textContent = isListening ? "1" : "0";
+  }
+}
 
-      msgs.forEach(m => {
-        let d = document.createElement("div");
-        d.className = "msg";
-        d.innerHTML = "<b>" + esc(m.name || "Visitante") + "</b><br><span>" + esc(m.text) + "</span>";
-        chatEl.appendChild(d);
-      });
 
-      document.getElementById("messages").textContent = msgs.length;
-      chatEl.scrollTop = chatEl.scrollHeight;
+/* ================================
+   2. GESTIÓN DEL CHAT
+================================ */
+
+function renderMessages(msgs) {
+  const chatEl = document.getElementById("chat");
+  chatEl.innerHTML = "";
+
+  if (msgs.length === 0) {
+    chatEl.innerHTML = '<div class="msg"><b>La Raza 98.7</b><br><span>Sé el primero en enviar un mensaje.</span></div>';
+    document.getElementById("messages").textContent = "0";
+    return;
+  }
+
+  msgs.forEach(m => {
+    let d = document.createElement("div");
+    d.className = "msg";
+    d.innerHTML = "<b>" + esc(m.name || m.n || "Visitante") + "</b><br><span>" + esc(m.text || m.t || "") + "</span>";
+    chatEl.appendChild(d);
+  });
+
+  document.getElementById("messages").textContent = msgs.length;
+  chatEl.scrollTop = chatEl.scrollHeight;
+}
+
+async function cargarMensajes(){
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc&limit=50`,
+      { method: "GET", headers: getHeaders() }
+    );
+
+    if (res.ok) {
+      const dbMsgs = await res.json();
+      dbMsgs.reverse();
+      renderMessages(dbMsgs);
+      document.getElementById("chatNote").textContent = "💬 Chat conectado en vivo con la comunidad.";
+    } else {
+      throw new Error("Respuesta no OK de Supabase");
     }
   } catch (error) {
-    console.error("Error al cargar mensajes:", error);
+    // Si falla la API de Supabase, entra el modo LocalStorage sin romper la página
+    renderMessages(localMsgs);
+    document.getElementById("chatNote").textContent = "⚠️ Chat en modo local (configurar permisos RLS en Supabase).";
   }
 }
 
@@ -601,43 +594,37 @@ async function sendMsg(){
   const nameInput = document.getElementById("name");
   const textInput = document.getElementById("text");
 
-  let n = nameInput.value.trim() || "Visitante";
-  let t = textInput.value.trim();
+  let nameVal = nameInput.value.trim() || "Visitante";
+  let textVal = textInput.value.trim();
 
-  if(!t) return;
+  if(!textVal) return;
 
+  // 1. Guardar localmente
+  localMsgs.push({ n: nameVal, t: textVal });
+  if(localMsgs.length > 50) localMsgs.shift();
+  localStorage.setItem("lr_msgs", JSON.stringify(localMsgs));
+
+  // 2. Intentar enviar a Supabase
   try {
-    const respuesta = await fetch(
-      `${SUPABASE_URL}/rest/v1/messages`,
-      {
-        method: "POST",
-        headers: {
-          "apikey": SUPABASE_ANON_KEY,
-          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "return=minimal"
-        },
-        body: JSON.stringify({
-          name: n,
-          text: t
-        })
-      }
-    );
-
-    if (respuesta.ok) {
-      textInput.value = "";
-      cargarMensajes();
-    } else {
-      console.error("Error enviando mensaje:", await respuesta.text());
-    }
+    await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
+      method: "POST",
+      headers: getHeaders(),
+      body: JSON.stringify({
+        name: nameVal,
+        text: textVal
+      })
+    });
   } catch (error) {
-    console.error("Error enviando mensaje:", error);
+    console.warn("No se pudo publicar en el servidor remotos:", error);
   }
+
+  textInput.value = "";
+  cargarMensajes();
 }
 
 
 /* ================================
-   CONECTAR STREAM
+   3. CONTROLES DE REPRODUCTOR
 ================================ */
 
 function setStream(){
@@ -654,25 +641,37 @@ function setStream(){
   statusEl.textContent = "Stream configurado. Presiona ▶️ para escuchar.";
 }
 
+const radio = document.getElementById("radio");
 
-/* ================================
-   ESTADO DEL REPRODUCTOR
-================================ */
+radio.addEventListener("play", () => {
+  isListening = true;
+  document.getElementById("status").textContent = "Reproduciendo en vivo en este dispositivo.";
+  syncUserPresence();
+});
 
-document.getElementById("radio").addEventListener("play", () => {
-  document.getElementById("status").textContent = "Reproduciendo en este dispositivo.";
+radio.addEventListener("pause", () => {
+  isListening = false;
+  document.getElementById("status").textContent = "Reproducción pausada.";
+  syncUserPresence();
+});
+
+radio.addEventListener("ended", () => {
+  isListening = false;
+  syncUserPresence();
 });
 
 
 /* ================================
-   INICIAR
+   INICIALIZACIÓN Y BUCLES
 ================================ */
 
-registrarVisita();
+// Carga inicial
 cargarMensajes();
+syncUserPresence();
 
-// Actualizar el chat automáticamente cada 5 segundos
-setInterval(cargarMensajes, 5000);
+// Intervalos de sincronización automática
+setInterval(syncUserPresence, 10000); // Actualiza presencia cada 10 seg
+setInterval(cargarMensajes, 4000);     // Revisa nuevos mensajes cada 4 seg
 
 </script>
 
