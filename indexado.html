@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#090909">
 <title>La Raza 98.7 FM | Santa Ana</title>
 
+<!-- Librería oficial de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{
   --bg:#090909;
@@ -317,7 +320,7 @@ audio{
 </audio>
 
 <div class="hint" id="status">
-  Presiona ▶️ para iniciar la radio.
+  Presiona ▶️ para escuchar.
 </div>
 
 </div>
@@ -350,7 +353,7 @@ audio{
 <div class="chat" id="chat">
   <div class="msg">
     <b>La Raza 98.7</b><br>
-    <span>Bienvenidos al chat en vivo.</span>
+    <span>Cargando chat...</span>
   </div>
 </div>
 
@@ -366,9 +369,10 @@ audio{
   id="text"
   placeholder="Escribe un mensaje..."
   maxlength="160"
+  onkeydown="if(event.key === 'Enter') sendMsg()"
 >
 
-<button class="btn" id="sendBtn" onclick="sendMsg()">
+<button class="btn" onclick="sendMsg()">
 Enviar
 </button>
 
@@ -450,26 +454,18 @@ La Raza 98.7 FM · Santa Ana, Sonora
 <script>
 
 /* ================================
-   CONFIGURACIÓN SUPABASE Y ESTADO
+   INICIALIZACIÓN DE CLIENTE SUPABASE
 ================================ */
 
 const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
-let isListening = false;
-let localMsgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-function getHeaders() {
-  return {
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-    "Content-Type": "application/json",
-    "Prefer": "return=representation"
-  };
-}
+let isListening = false;
 
 function esc(s){
-  return String(s).replace(
+  return String(s || "").replace(
     /[&<>"']/g,
     x => ({
       "&": "&amp;",
@@ -483,10 +479,10 @@ function esc(s){
 
 
 /* ================================
-   1. GESTIÓN DE VISITAS Y OYENTES
+   1. REGISTRO Y CONTEO DE PRESENCIA
 ================================ */
 
-async function syncUserPresence(){
+async function syncPresence(){
   try {
     let sesion = localStorage.getItem("raza_session");
     if (!sesion) {
@@ -494,99 +490,81 @@ async function syncUserPresence(){
       localStorage.setItem("raza_session", sesion);
     }
 
-    const now = new Date().toISOString();
-
-    // Actualizar o crear presencia
-    await fetch(`${SUPABASE_URL}/rest/v1/visits`, {
-      method: "POST",
-      headers: { ...getHeaders(), "Prefer": "resolution=merge-duplicates" },
-      body: JSON.stringify({
-        session_id: sesion,
-        last_seen: now,
-        is_listening: isListening
-      })
+    // Upsert de la sesión actual
+    await db.from("visits").upsert({
+      session_id: sesion,
+      last_seen: new Date().toISOString(),
+      is_listening: isListening
     });
 
-    // Consultar conteo total de visitas
-    const resVisits = await fetch(`${SUPABASE_URL}/rest/v1/visits?select=session_id`, {
-      method: "GET",
-      headers: getHeaders()
-    });
+    // Conteo total de visitas
+    const { count: totalVisitas, error: errV } = await db
+      .from("visits")
+      .select("*", { count: "exact", head: true });
 
-    if (resVisits.ok) {
-      const dataVisits = await resVisits.json();
-      document.getElementById("visits").textContent = dataVisits.length;
-    } else {
-      // Fallback local en caso de error de Supabase
-      document.getElementById("visits").textContent = "1";
+    if (!errV && totalVisitas !== null) {
+      document.getElementById("visits").textContent = totalVisitas;
     }
 
-    // Consultar oyentes activos (vistos en los últimos 20 segundos y con reproductor encendido)
-    const timeThreshold = new Date(Date.now() - 20000).toISOString();
-    const resListeners = await fetch(
-      `${SUPABASE_URL}/rest/v1/visits?is_listening=eq.true&last_seen=gt.${timeThreshold}&select=session_id`,
-      { method: "GET", headers: getHeaders() }
-    );
+    // Conteo de oyentes en los últimos 20 segundos
+    const threshold = new Date(Date.now() - 20000).toISOString();
+    const { count: totalOyentes, error: errO } = await db
+      .from("visits")
+      .select("*", { count: "exact", head: true })
+      .eq("is_listening", true)
+      .gt("last_seen", threshold);
 
-    if (resListeners.ok) {
-      const dataListeners = await resListeners.json();
-      document.getElementById("listeners").textContent = dataListeners.length;
-    } else {
-      document.getElementById("listeners").textContent = isListening ? "1" : "0";
+    if (!errO && totalOyentes !== null) {
+      document.getElementById("listeners").textContent = totalOyentes;
     }
 
-  } catch (error) {
-    console.warn("Fallo de red al sincronizar presencia:", error);
-    document.getElementById("visits").textContent = "1";
-    document.getElementById("listeners").textContent = isListening ? "1" : "0";
+  } catch (err) {
+    console.error("Error sincronizando presencia:", err);
   }
 }
 
 
 /* ================================
-   2. GESTIÓN DEL CHAT
+   2. CHAT EN TIEMPO REAL
 ================================ */
-
-function renderMessages(msgs) {
-  const chatEl = document.getElementById("chat");
-  chatEl.innerHTML = "";
-
-  if (msgs.length === 0) {
-    chatEl.innerHTML = '<div class="msg"><b>La Raza 98.7</b><br><span>Sé el primero en enviar un mensaje.</span></div>';
-    document.getElementById("messages").textContent = "0";
-    return;
-  }
-
-  msgs.forEach(m => {
-    let d = document.createElement("div");
-    d.className = "msg";
-    d.innerHTML = "<b>" + esc(m.name || m.n || "Visitante") + "</b><br><span>" + esc(m.text || m.t || "") + "</span>";
-    chatEl.appendChild(d);
-  });
-
-  document.getElementById("messages").textContent = msgs.length;
-  chatEl.scrollTop = chatEl.scrollHeight;
-}
 
 async function cargarMensajes(){
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc&limit=50`,
-      { method: "GET", headers: getHeaders() }
-    );
+    const { data: mensajes, error } = await db
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    if (res.ok) {
-      const dbMsgs = await res.json();
-      dbMsgs.reverse();
-      renderMessages(dbMsgs);
-      document.getElementById("chatNote").textContent = "💬 Chat conectado en vivo con la comunidad.";
-    } else {
-      throw new Error("Respuesta no OK de Supabase");
+    if (error) {
+      console.error("Error al obtener mensajes:", error);
+      return;
     }
-  } catch (error) {
-    // Si falla la API de Supabase, entra el modo LocalStorage sin romper la página
-    renderMessages(localMsgs);
-    document.getElementById("chatNote").textContent = "⚠️ Chat en modo local (configurar permisos RLS en Supabase).";
+
+    const chatEl = document.getElementById("chat");
+    chatEl.innerHTML = "";
+
+    if (!mensajes || mensajes.length === 0) {
+      chatEl.innerHTML = '<div class="msg"><b>La Raza 98.7</b><br><span>¡Sé el primero en mandar un saludo!</span></div>';
+      document.getElementById("messages").textContent = "0";
+      return;
+    }
+
+    // Mostrar de más antiguo a más reciente
+    const lista = [...mensajes].reverse();
+
+    lista.forEach(m => {
+      let d = document.createElement("div");
+      d.className = "msg";
+      d.innerHTML = "<b>" + esc(m.name) + "</b><br><span>" + esc(m.text) + "</span>";
+      chatEl.appendChild(d);
+    });
+
+    document.getElementById("messages").textContent = lista.length;
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+  } catch (err) {
+    console.error("Error cargando chat:", err);
   }
 }
 
@@ -594,28 +572,20 @@ async function sendMsg(){
   const nameInput = document.getElementById("name");
   const textInput = document.getElementById("text");
 
-  let nameVal = nameInput.value.trim() || "Visitante";
-  let textVal = textInput.value.trim();
+  let n = nameInput.value.trim() || "Visitante";
+  let t = textInput.value.trim();
 
-  if(!textVal) return;
+  if(!t) return;
 
-  // 1. Guardar localmente
-  localMsgs.push({ n: nameVal, t: textVal });
-  if(localMsgs.length > 50) localMsgs.shift();
-  localStorage.setItem("lr_msgs", JSON.stringify(localMsgs));
+  // Insertar en Supabase
+  const { error } = await db
+    .from("messages")
+    .insert([{ name: n, text: t }]);
 
-  // 2. Intentar enviar a Supabase
-  try {
-    await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({
-        name: nameVal,
-        text: textVal
-      })
-    });
-  } catch (error) {
-    console.warn("No se pudo publicar en el servidor remotos:", error);
+  if (error) {
+    alert("No se pudo enviar el mensaje: " + error.message);
+    console.error("Error al insertar mensaje:", error);
+    return;
   }
 
   textInput.value = "";
@@ -624,7 +594,7 @@ async function sendMsg(){
 
 
 /* ================================
-   3. CONTROLES DE REPRODUCTOR
+   3. CONTROLES DEL REPRODUCTOR
 ================================ */
 
 function setStream(){
@@ -645,33 +615,38 @@ const radio = document.getElementById("radio");
 
 radio.addEventListener("play", () => {
   isListening = true;
-  document.getElementById("status").textContent = "Reproduciendo en vivo en este dispositivo.";
-  syncUserPresence();
+  document.getElementById("status").textContent = "Reproduciendo en este dispositivo.";
+  syncPresence();
 });
 
 radio.addEventListener("pause", () => {
   isListening = false;
-  document.getElementById("status").textContent = "Reproducción pausada.";
-  syncUserPresence();
+  document.getElementById("status").textContent = "Pausa.";
+  syncPresence();
 });
 
 radio.addEventListener("ended", () => {
   isListening = false;
-  syncUserPresence();
+  syncPresence();
 });
 
 
 /* ================================
-   INICIALIZACIÓN Y BUCLES
+   INICIAR Y AUTO-ACTUALIZAR
 ================================ */
 
-// Carga inicial
+syncPresence();
 cargarMensajes();
-syncUserPresence();
 
-// Intervalos de sincronización automática
-setInterval(syncUserPresence, 10000); // Actualiza presencia cada 10 seg
-setInterval(cargarMensajes, 4000);     // Revisa nuevos mensajes cada 4 seg
+// Suscripción Realtime para mensajes instantáneos sin esperar
+db.channel("realtime_messages")
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, () => {
+    cargarMensajes();
+  })
+  .subscribe();
+
+// Actualización periódica de oyentes y visitas
+setInterval(syncPresence, 8000);
 
 </script>
 
