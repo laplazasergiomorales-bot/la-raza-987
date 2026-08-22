@@ -471,10 +471,7 @@ async function registrarVisita(){
 
   try{
 
-    let sesion =
-      localStorage.getItem("raza_session");
-
-    /* Crear una sesión nueva */
+    let sesion = localStorage.getItem("raza_session");
 
     if(!sesion){
 
@@ -485,40 +482,91 @@ async function registrarVisita(){
         sesion
       );
 
-      const respuesta =
-        await fetch(
-          '${SUPABASE_URL}/rest/v1/visits',
-          {
-            method:"POST",
+      const respuesta = await fetch(
+        ${SUPABASE_URL}/rest/v1/visits,
+        {
+          method:"POST",
 
-            headers:{
-              "apikey":SUPABASE_ANON_KEY,
-              "Authorization":
-                'Bearer ${SUPABASE_ANON_KEY}',
-              "Content-Type":
-                "application/json",
-              "Prefer":
-                "return=minimal"
-            },
+          headers:{
+            "apikey":SUPABASE_ANON_KEY,
+            "Authorization":Bearer ${SUPABASE_ANON_KEY},
+            "Content-Type":"application/json",
+            "Prefer":"return=minimal"
+          },
 
-            body:JSON.stringify({
-              sesion:sesion,
-              ultima_vez_visto:
-                new Date().toISOString()
-            })
-          }
-        );
+          body:JSON.stringify({
+            session_id:sesion,
+            last_seen:new Date().toISOString()
+          })
+        }
+      );
 
       if(!respuesta.ok){
-
         console.error(
           "Error creando visita:",
           await respuesta.text()
         );
+      }
 
+    }else{
+
+      const respuesta = await fetch(
+        ${SUPABASE_URL}/rest/v1/visits?session_id=eq.${encodeURIComponent(sesion)},
+        {
+          method:"PATCH",
+
+          headers:{
+            "apikey":SUPABASE_ANON_KEY,
+            "Authorization":Bearer ${SUPABASE_ANON_KEY},
+            "Content-Type":"application/json",
+            "Prefer":"return=minimal"
+          },
+
+          body:JSON.stringify({
+            last_seen:new Date().toISOString()
+          })
+        }
+      );
+
+      if(!respuesta.ok){
+        console.error(
+          "Error actualizando visita:",
+          await respuesta.text()
+        );
       }
 
     }
+
+    const total = await fetch(
+      ${SUPABASE_URL}/rest/v1/visits?select=session_id,
+      {
+        method:"GET",
+
+        headers:{
+          "apikey":SUPABASE_ANON_KEY,
+          "Authorization":Bearer ${SUPABASE_ANON_KEY}
+        }
+      }
+    );
+
+    if(total.ok){
+
+      const datos = await total.json();
+
+      visits.textContent = datos.length;
+
+    }
+
+  }catch(error){
+
+    console.error(
+      "Error registrando visita:",
+      error
+    );
+
+  }
+
+}
 
     /* Actualizar última visita */
 
