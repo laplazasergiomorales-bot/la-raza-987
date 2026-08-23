@@ -454,8 +454,6 @@ La Raza 98.7 FM · Santa Ana, Sonora
 ================================ */
 
 const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
-
-// Reemplaza esta variable por tu token ANON real (empieza con eyJ...)
 const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
 let isListening = false;
@@ -463,6 +461,7 @@ let localMsgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
 
 function getHeaders() {
   return {
+    "apiKey": SUPABASE_ANON_KEY,
     "apikey": SUPABASE_ANON_KEY,
     "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
     "Content-Type": "application/json",
@@ -579,7 +578,7 @@ async function cargarMensajes(){
       const errText = await res.text();
       console.error("Error al cargar mensajes desde Supabase:", errText);
       renderMessages(localMsgs);
-      document.getElementById("chatNote").textContent = "⚠️ Error de autenticación en Supabase. Verifica tu anon key.";
+      document.getElementById("chatNote").textContent = "⚠️ Error al conectar con Supabase. Revisa los permisos de la tabla.";
     }
   } catch (error) {
     console.error("Error de red al conectar chat:", error);
@@ -675,3 +674,4 @@ setInterval(cargarMensajes, 4000);
 </script>
 
 </body>
+</html>
