@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#090909">
 <title>La Raza 98.7 FM | Santa Ana</title>
 
+<!-- Cargamos la librería oficial de Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <style>
 :root{
   --bg:#090909;
@@ -375,7 +378,7 @@ Enviar
 </div>
 
 <p class="note" id="chatNote">
-Chat conectado en tiempo real.
+Conectando chat...
 </p>
 
 </div>
@@ -450,24 +453,16 @@ La Raza 98.7 FM · Santa Ana, Sonora
 <script>
 
 /* ================================
-   CONFIGURACIÓN SUPABASE Y ESTADO
+   INICIALIZACIÓN DE SUPABASE SDK
 ================================ */
 
 const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
 
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let isListening = false;
 let localMsgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
-
-function getHeaders() {
-  return {
-    "apiKey": SUPABASE_ANON_KEY,
-    "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-    "Content-Type": "application/json",
-    "Prefer": "return=representation"
-  };
-}
 
 function esc(s){
   return String(s).replace(
@@ -497,42 +492,34 @@ async function syncUserPresence(){
 
     const now = new Date().toISOString();
 
-    // Actualizar o crear presencia
-    await fetch(`${SUPABASE_URL}/rest/v1/visits`, {
-      method: "POST",
-      headers: { ...getHeaders(), "Prefer": "resolution=merge-duplicates" },
-      body: JSON.stringify({
-        session_id: sesion,
-        last_seen: now,
-        is_listening: isListening
-      })
-    });
+    // Guardar/actualizar presencia
+    await supabaseClient
+      .from("visits")
+      .upsert({ session_id: sesion, last_seen: now, is_listening: isListening }, { onConflict: "session_id" });
 
-    // Consultar conteo total de visitas
-    const resVisits = await fetch(`${SUPABASE_URL}/rest/v1/visits?select=session_id`, {
-      method: "GET",
-      headers: getHeaders()
-    });
+    // Consultar el total de visitas
+    const { data: dataVisits } = await supabaseClient
+      .from("visits")
+      .select("session_id");
 
-    if (resVisits.ok) {
-      const dataVisits = await resVisits.json();
+    if (dataVisits) {
       document.getElementById("visits").textContent = dataVisits.length;
     }
 
-    // Consultar oyentes activos (vistos en los últimos 20 segundos y reproduciendo)
+    // Consultar oyentes activos (últimos 20 segundos y is_listening = true)
     const timeThreshold = new Date(Date.now() - 20000).toISOString();
-    const resListeners = await fetch(
-      `${SUPABASE_URL}/rest/v1/visits?is_listening=eq.true&last_seen=gt.${timeThreshold}&select=session_id`,
-      { method: "GET", headers: getHeaders() }
-    );
+    const { data: dataListeners } = await supabaseClient
+      .from("visits")
+      .select("session_id")
+      .eq("is_listening", true)
+      .gt("last_seen", timeThreshold);
 
-    if (resListeners.ok) {
-      const dataListeners = await resListeners.json();
+    if (dataListeners) {
       document.getElementById("listeners").textContent = dataListeners.length;
     }
 
   } catch (error) {
-    console.warn("Fallo al actualizar presencia:", error);
+    console.warn("Error presencia:", error);
   }
 }
 
@@ -564,24 +551,23 @@ function renderMessages(msgs) {
 
 async function cargarMensajes(){
   try {
-    const res = await fetch(
-      `${SUPABASE_URL}/rest/v1/messages?select=*&order=created_at.desc&limit=50`,
-      { method: "GET", headers: getHeaders() }
-    );
+    const { data, error } = await supabaseClient
+      .from("messages")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(50);
 
-    if (res.ok) {
-      const dbMsgs = await res.json();
-      dbMsgs.reverse();
-      renderMessages(dbMsgs);
-      document.getElementById("chatNote").textContent = "💬 Chat conectado en vivo con el servidor.";
-    } else {
-      const errText = await res.text();
-      console.error("Error al cargar mensajes desde Supabase:", errText);
+    if (error) {
+      console.error("Error al cargar mensajes:", error);
       renderMessages(localMsgs);
-      document.getElementById("chatNote").textContent = "⚠️ Error al conectar con Supabase. Revisa los permisos de la tabla.";
+      document.getElementById("chatNote").textContent = "⚠️ Error de permisos en la tabla. Revisa que RLS esté en disabled.";
+    } else {
+      const dbMsgs = [...data].reverse();
+      renderMessages(dbMsgs);
+      document.getElementById("chatNote").textContent = "💬 Chat conectado en vivo.";
     }
   } catch (error) {
-    console.error("Error de red al conectar chat:", error);
+    console.error("Error de conexión:", error);
     renderMessages(localMsgs);
   }
 }
@@ -595,21 +581,12 @@ async function sendMsg(){
 
   if(!textVal) return;
 
-  try {
-    const res = await fetch(`${SUPABASE_URL}/rest/v1/messages`, {
-      method: "POST",
-      headers: getHeaders(),
-      body: JSON.stringify({
-        name: nameVal,
-        text: textVal
-      })
-    });
+  const { error } = await supabaseClient
+    .from("messages")
+    .insert([{ name: nameVal, text: textVal }]);
 
-    if (!res.ok) {
-      console.error("No se pudo guardar el mensaje en Supabase:", await res.text());
-    }
-  } catch (error) {
-    console.error("Error enviando mensaje:", error);
+  if (error) {
+    console.error("Error al insertar mensaje:", error);
   }
 
   // Respaldo local
@@ -667,7 +644,7 @@ radio.addEventListener("ended", () => {
 cargarMensajes();
 syncUserPresence();
 
-// Consultar actualizaciones en segundo plano
+// Actualizar cada pocos segundos
 setInterval(syncUserPresence, 8000);
 setInterval(cargarMensajes, 4000);
 
