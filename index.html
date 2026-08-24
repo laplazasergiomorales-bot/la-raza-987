@@ -78,7 +78,7 @@ body{
   box-shadow:0 0 12px #e31b23
 }
 
-/* SECCIÓN SUPERIOR DE LOGOS - ESTILO HISTORIAS DE FACEBOOK */
+/* LOGOS SUPERIORES */
 .header-logos{
   display:flex;
   justify-content:center;
@@ -105,7 +105,6 @@ body{
   color:#fff;
 }
 
-/* EFECTO ANILLO DE HISTORIA */
 .story-ring {
   padding:3px;
   border-radius:50%;
@@ -167,31 +166,35 @@ audio{
   margin:10px 0 0
 }
 
-.stats{
-  display:grid;
-  grid-template-columns:repeat(3,1fr);
-  gap:12px;
+/* UN SOLO CONTADOR CENTRADO */
+.stats-single{
+  display:flex;
+  justify-content:center;
   margin:18px auto;
-  max-width:680px
+  max-width:320px;
 }
 
 .stat{
   background:#0e0e0e;
   border:1px solid #2b2b2b;
   border-radius:16px;
-  padding:16px;
-  text-align:center
+  padding:14px 28px;
+  text-align:center;
+  width:100%;
 }
 
 .num{
-  font-size:26px;
-  font-weight:900
+  font-size:32px;
+  font-weight:900;
+  color:var(--accent2);
 }
 
 .label{
   font-size:12px;
   color:#888;
-  margin-top:4px
+  margin-top:2px;
+  font-weight:bold;
+  letter-spacing:0.5px;
 }
 
 .social-bar{
@@ -310,7 +313,7 @@ audio{
   display:grid;
   grid-template-columns:1fr 1fr;
   gap:10px;
-  margin-top:15px;
+  margin-top:10px;
 }
 
 .link{
@@ -326,12 +329,13 @@ audio{
 }
 
 .admin{
-  margin-top:18px
+  margin-top:14px
 }
 
 .admin details summary{
   cursor:pointer;
-  font-weight:800
+  font-weight:800;
+  color:#aaa;
 }
 
 .admin input{
@@ -376,10 +380,6 @@ audio{
     height:75px;
   }
 
-  .stats{
-    grid-template-columns:1fr 1fr 1fr
-  }
-
   .chatrow{
     flex-wrap:wrap
   }
@@ -407,7 +407,7 @@ audio{
   </div>
 </div>
 
-<!-- LOGOS DE CABECERA ESTILO HISTORIAS DE FACEBOOK -->
+<!-- LOGOS DE CABECERA -->
 <div class="header-logos">
   <a href="https://www.facebook.com/LaRaza98.7" target="_blank" class="logo-item main" title="La Raza 98.7 FM">
     <div class="story-ring">
@@ -450,19 +450,10 @@ audio{
 </div>
 
 <div class="player">
-
-<audio id="radio" controls preload="none">
-  <source
-    id="stream"
-    src="https://stream.zeno.fm/jhc9slvhxzetv"
-    type="audio/mpeg"
-  >
-</audio>
-
-<div class="hint" id="status">
-  Presiona ▶️ para iniciar la radio.
-</div>
-
+  <audio id="radio" controls preload="none">
+    <source id="stream" src="https://stream.zeno.fm/jhc9slvhxzetv" type="audio/mpeg">
+  </audio>
+  <div class="hint" id="status">Presiona ▶️ para iniciar la radio.</div>
 </div>
 
 <!-- BOTONES DIRECTOS -->
@@ -481,74 +472,33 @@ audio{
   </a>
 </div>
 
-<div class="stats">
-
-<div class="stat">
-  <div class="num" id="listeners">0</div>
-  <div class="label">ESCUCHANDO AHORA</div>
-</div>
-
-<div class="stat">
-  <div class="num" id="visits">0</div>
-  <div class="label">VISITAS EN ESTA PÁGINA</div>
-</div>
-
-<div class="stat">
-  <div class="num" id="messages">0</div>
-  <div class="label">MENSAJES</div>
-</div>
-
-</div>
-
-<!-- FILA 1: CHAT Y STREAM CONTROL -->
-<div class="grid">
-
-  <!-- CHAT EN VIVO -->
-  <div class="panel">
-    <h2>💬 Chat en vivo</h2>
-
-    <div class="chat" id="chat">
-      <div class="msg">
-        <b>La Raza 98.7</b><br>
-        <span>Cargando mensajes...</span>
-      </div>
-    </div>
-
-    <div class="chatrow">
-      <input id="name" placeholder="Tu nombre" maxlength="30">
-      <input id="text" placeholder="Escribe un mensaje..." maxlength="160">
-      <button class="btn" id="sendBtn" onclick="sendMsg()">Enviar</button>
-    </div>
-
-    <p class="note" id="chatNote">Conectando chat...</p>
+<!-- UNICO CONTADOR: ESCUCHANDO AHORA -->
+<div class="stats-single">
+  <div class="stat">
+    <div class="num" id="listeners">0</div>
+    <div class="label">🔴 OYENTES EN VIVO</div>
   </div>
+</div>
 
-  <!-- PLATAFORMAS DE STREAMING -->
-  <div class="panel" style="display:flex; flex-direction:column; justify-content:space-between;">
-    <div>
-      <h2>📻 Escúchanos en Web</h2>
-      <p style="color:#aaa; font-size:14px; line-height:1.5;">
-        También puedes sintonizar nuestra señal en vivo a través de las plataformas digitales oficiales de streaming.
-      </p>
-    </div>
-
-    <div class="links">
-      <a class="link" href="https://zeno.fm/radio/la-raza-98-7-santa-ana/" target="_blank">Zeno.FM</a>
-      <a class="link" href="https://tunein.com/radio/La-Raza-987-FM-Santa-Ana-s268039/" target="_blank">TuneIn</a>
-    </div>
-
-    <div class="admin">
-      <details>
-        <summary>⚙️ Conectar stream</summary>
-        <input id="streamUrl" value="https://stream.zeno.fm/jhc9slvhxzetv" placeholder="URL directa del stream">
-        <button class="btn" onclick="setStream()">Conectar</button>
-      </details>
+<!-- SECCIÓN 1: CHAT EN VIVO -->
+<div class="panel" style="margin-top: 20px;">
+  <h2>💬 Chat en vivo</h2>
+  <div class="chat" id="chat">
+    <div class="msg">
+      <b>La Raza 98.7</b><br>
+      <span>Cargando mensajes...</span>
     </div>
   </div>
 
+  <div class="chatrow">
+    <input id="name" placeholder="Tu nombre" maxlength="30">
+    <input id="text" placeholder="Escribe un mensaje..." maxlength="160">
+    <button class="btn" id="sendBtn" onclick="sendMsg()">Enviar</button>
+  </div>
+  <p class="note" id="chatNote">Conectando chat...</p>
 </div>
 
-<!-- FILA 2: FACEBOOKS LADO A LADO -->
+<!-- SECCIÓN 2: FACEBOOKS LADO A LADO -->
 <div class="grid">
 
   <!-- MURO PRINCIPAL: LA LLAVE DEL DESIERTO -->
@@ -593,6 +543,27 @@ audio{
     </div>
   </div>
 
+</div>
+
+<!-- SECCIÓN 3: PLATAFORMAS WEB AL FINAL -->
+<div class="panel" style="margin-top:20px;">
+  <h2>📻 Escúchanos en otras Plataformas Web</h2>
+  <p style="color:#aaa; font-size:14px; margin-bottom:12px;">
+    También puedes sintonizar nuestra señal en vivo desde tus aplicaciones o directorios web favoritos:
+  </p>
+
+  <div class="links">
+    <a class="link" href="https://zeno.fm/radio/la-raza-98-7-santa-ana/" target="_blank">Escuchar en Zeno.FM</a>
+    <a class="link" href="https://tunein.com/radio/La-Raza-987-FM-Santa-Ana-s268039/" target="_blank">Escuchar en TuneIn</a>
+  </div>
+
+  <div class="admin">
+    <details>
+      <summary>⚙️ Opción de servidor secundario</summary>
+      <input id="streamUrl" value="https://stream.zeno.fm/jhc9slvhxzetv" placeholder="URL directa del stream">
+      <button class="btn" onclick="setStream()">Conectar Stream</button>
+    </details>
+  </div>
 </div>
 
 <div class="footer">
@@ -646,11 +617,9 @@ const channel = supabaseClient.channel('radio-room');
 channel
   .on('presence', { event: 'sync' }, () => {
     const state = channel.presenceState();
-    let totalVisits = 0;
     let totalListeners = 0;
 
     for (const key in state) {
-      totalVisits += state[key].length;
       state[key].forEach(user => {
         if (user.is_listening) {
           totalListeners++;
@@ -658,7 +627,6 @@ channel
       });
     }
 
-    document.getElementById("visits").textContent = totalVisits;
     document.getElementById("listeners").textContent = totalListeners;
   })
   .subscribe(async (status) => {
@@ -692,7 +660,6 @@ function renderMessages(msgs) {
 
   if (msgs.length === 0) {
     chatEl.innerHTML = '<div class="msg"><b>La Raza 98.7</b><br><span>Bienvenidos al chat. ¡Envía un mensaje!</span></div>';
-    document.getElementById("messages").textContent = "0";
     return;
   }
 
@@ -703,7 +670,6 @@ function renderMessages(msgs) {
     chatEl.appendChild(d);
   });
 
-  document.getElementById("messages").textContent = msgs.length;
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
