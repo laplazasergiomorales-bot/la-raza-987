@@ -166,31 +166,31 @@ audio{
   margin:10px 0 0
 }
 
-/* UN SOLO CONTADOR CENTRADO */
-.stats-single{
-  display:flex;
-  justify-content:center;
+/* CONTADORES DE OYENTES Y RATING */
+.stats-double{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
   margin:18px auto;
-  max-width:320px;
+  max-width:500px;
 }
 
 .stat{
   background:#0e0e0e;
   border:1px solid #2b2b2b;
   border-radius:16px;
-  padding:14px 28px;
+  padding:14px 20px;
   text-align:center;
-  width:100%;
 }
 
 .num{
-  font-size:32px;
+  font-size:30px;
   font-weight:900;
   color:var(--accent2);
 }
 
 .label{
-  font-size:12px;
+  font-size:11px;
   color:#888;
   margin-top:2px;
   font-weight:bold;
@@ -472,11 +472,15 @@ audio{
   </a>
 </div>
 
-<!-- UNICO CONTADOR: ESCUCHANDO AHORA -->
-<div class="stats-single">
+<!-- CONTADORES: ESCUCHANDO Y RATING HOY -->
+<div class="stats-double">
   <div class="stat">
-    <div class="num" id="listeners">0</div>
+    <div class="num" id="listeners">5</div>
     <div class="label">🔴 OYENTES EN VIVO</div>
+  </div>
+  <div class="stat">
+    <div class="num" id="todayRating">1</div>
+    <div class="label">📈 RATING HOY</div>
   </div>
 </div>
 
@@ -609,25 +613,36 @@ function esc(s){
 
 
 /* ================================
-   1. PRESENCIA Y OYENTES EN TIEMPO REAL
+   1. PRESENCIA, OYENTES Y RATING HOY
 ================================ */
+
+// BASE MÍNIMA DE OYENTES SIMULADOS (Para que nunca aparezca en 0)
+const MIN_LISTENERS = 5;
+
+// CONTADOR ACUMULATIVO DE RATING HOY
+let currentRating = parseInt(localStorage.getItem("raza_rating_today") || "12");
+currentRating += 1;
+localStorage.setItem("raza_rating_today", currentRating);
+document.getElementById("todayRating").textContent = currentRating;
 
 const channel = supabaseClient.channel('radio-room');
 
 channel
   .on('presence', { event: 'sync' }, () => {
     const state = channel.presenceState();
-    let totalListeners = 0;
+    let realListeners = 0;
 
     for (const key in state) {
       state[key].forEach(user => {
         if (user.is_listening) {
-          totalListeners++;
+          realListeners++;
         }
       });
     }
 
-    document.getElementById("listeners").textContent = totalListeners;
+    // Se suma la base de 5 al número real
+    const totalShown = realListeners + MIN_LISTENERS;
+    document.getElementById("listeners").textContent = totalShown;
   })
   .subscribe(async (status) => {
     if (status === 'SUBSCRIBED') {
