@@ -616,11 +616,19 @@ function esc(s){
    1. PRESENCIA, OYENTES Y RATING HOY
 ================================ */
 
-// BASE MÍNIMA DE OYENTES SIMULADOS (Para que nunca aparezca en 0)
+// BASE MÍNIMA DE OYENTES SIMULADOS (Nunca baja de 5)
 const MIN_LISTENERS = 5;
 
-// CONTADOR ACUMULATIVO DE RATING HOY
-let currentRating = parseInt(localStorage.getItem("raza_rating_today") || "12");
+// CONTADOR ACUMULATIVO DE RATING HOY (SE REINICIA CADA NUEVO DÍA)
+const todayStr = new Date().toISOString().slice(0, 10);
+const savedDate = localStorage.getItem("raza_rating_date");
+let currentRating = parseInt(localStorage.getItem("raza_rating_today") || "0");
+
+if (savedDate !== todayStr) {
+  currentRating = 0;
+  localStorage.setItem("raza_rating_date", todayStr);
+}
+
 currentRating += 1;
 localStorage.setItem("raza_rating_today", currentRating);
 document.getElementById("todayRating").textContent = currentRating;
@@ -640,7 +648,7 @@ channel
       });
     }
 
-    // Se suma la base de 5 al número real
+    // Se suma la base de 5 al número de oyentes reales
     const totalShown = realListeners + MIN_LISTENERS;
     document.getElementById("listeners").textContent = totalShown;
   })
