@@ -479,7 +479,7 @@ audio{
     <div class="label">🔴 OYENTES EN VIVO</div>
   </div>
   <div class="stat">
-    <div class="num" id="todayRating">1</div>
+    <div class="num" id="todayRating">...</div>
     <div class="label">📈 RATING HOY</div>
   </div>
 </div>
@@ -613,25 +613,10 @@ function esc(s){
 
 
 /* ================================
-   1. PRESENCIA, OYENTES Y RATING HOY
+   1. PRESENCIA Y OYENTES EN VIVO
 ================================ */
 
-// BASE MÍNIMA DE OYENTES SIMULADOS (Nunca baja de 5)
 const MIN_LISTENERS = 5;
-
-// CONTADOR ACUMULATIVO DE RATING HOY (SE REINICIA CADA NUEVO DÍA)
-const todayStr = new Date().toISOString().slice(0, 10);
-const savedDate = localStorage.getItem("raza_rating_date");
-let currentRating = parseInt(localStorage.getItem("raza_rating_today") || "0");
-
-if (savedDate !== todayStr) {
-  currentRating = 0;
-  localStorage.setItem("raza_rating_date", todayStr);
-}
-
-currentRating += 1;
-localStorage.setItem("raza_rating_today", currentRating);
-document.getElementById("todayRating").textContent = currentRating;
 
 const channel = supabaseClient.channel('radio-room');
 
@@ -648,7 +633,6 @@ channel
       });
     }
 
-    // Se suma la base de 5 al número de oyentes reales
     const totalShown = realListeners + MIN_LISTENERS;
     document.getElementById("listeners").textContent = totalShown;
   })
@@ -674,7 +658,61 @@ async function updatePresence() {
 
 
 /* ================================
-   2. GESTIÓN DEL CHAT EN TIEMPO REAL
+   2. RATING HOY GLOBAL Y CENTRALIZADO (SUPABASE)
+================================ */
+
+async function procesarRatingGlobal() {
+  const todayDateStr = new Date().toISOString().slice(0, 10);
+  const ratingEl = document.getElementById("todayRating");
+
+  try {
+    // 1. Consultar el registro del día de hoy en Supabase
+    let { data, error } = await supabaseClient
+      .from("daily_ratings")
+      .select("*")
+      .eq("rating_date", todayDateStr)
+      .maybeSingle();
+
+    let count = 1;
+
+    if (data) {
+      // 2. Si ya existe el día, se incrementa en 1
+      count = data.count + 1;
+      await supabaseClient
+        .from("daily_ratings")
+        .update({ count: count })
+        .eq("rating_date", todayDateStr);
+    } else {
+      // 3. Si es un nuevo día, se crea el primer registro
+      await supabaseClient
+        .from("daily_ratings")
+        .insert([{ rating_date: todayDateStr, count: 1 }]);
+    }
+
+    ratingEl.textContent = count;
+  } catch (err) {
+    // Modo de respaldo local si falla la red
+    let fallbackCount = parseInt(localStorage.getItem("raza_fallback_rating") || "5") + 1;
+    localStorage.setItem("raza_fallback_rating", fallbackCount);
+    ratingEl.textContent = fallbackCount;
+  }
+}
+
+// Escuchar cambios de Rating en vivo para que el número aumente si alguien más entra
+supabaseClient
+  .channel('public:daily_ratings')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_ratings' }, payload => {
+    if (payload.new && payload.new.count) {
+      document.getElementById("todayRating").textContent = payload.new.count;
+    }
+  })
+  .subscribe();
+
+procesarRatingGlobal();
+
+
+/* ================================
+   3. GESTIÓN DEL CHAT EN TIEMPO REAL
 ================================ */
 
 function renderMessages(msgs) {
@@ -747,7 +785,7 @@ async function sendMsg(){
 
 
 /* ================================
-   3. CONTROLES DEL REPRODUCTOR
+   4. CONTROLES DEL REPRODUCTOR
 ================================ */
 
 function setStream(){
