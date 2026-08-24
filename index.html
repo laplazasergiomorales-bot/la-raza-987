@@ -227,7 +227,7 @@ audio{
 
 .grid{
   display:grid;
-  grid-template-columns:1.1fr 0.9fr;
+  grid-template-columns:1fr 1fr;
   gap:18px;
   margin-top:20px
 }
@@ -299,7 +299,7 @@ audio{
   background:#090909;
   border:1px solid #292929;
   border-radius:14px;
-  height:380px;
+  height:400px;
   overflow:hidden;
   display:flex;
   justify-content:center;
@@ -407,7 +407,7 @@ audio{
   </div>
 </div>
 
-<!-- TRES LOGOS CON URLS DE TU ALMACENAMIENTO EN SUPABASE -->
+<!-- LOGOS DE CABECERA ESTILO HISTORIAS DE FACEBOOK -->
 <div class="header-logos">
   <a href="https://www.facebook.com/LaRaza98.7" target="_blank" class="logo-item main" title="La Raza 98.7 FM">
     <div class="story-ring">
@@ -465,7 +465,7 @@ audio{
 
 </div>
 
-<!-- BOTONES DIRECTOS REDES Y NOTICIAS -->
+<!-- BOTONES DIRECTOS -->
 <div class="social-bar">
   <a href="https://www.facebook.com/LaRaza98.7" target="_blank" class="social-btn fb">
     📘 Facebook Oficial
@@ -500,135 +500,98 @@ audio{
 
 </div>
 
+<!-- FILA 1: CHAT Y STREAM CONTROL -->
 <div class="grid">
 
-<!-- CHAT EN VIVO -->
-<div class="panel">
+  <!-- CHAT EN VIVO -->
+  <div class="panel">
+    <h2>💬 Chat en vivo</h2>
 
-<h2>💬 Chat en vivo</h2>
+    <div class="chat" id="chat">
+      <div class="msg">
+        <b>La Raza 98.7</b><br>
+        <span>Cargando mensajes...</span>
+      </div>
+    </div>
 
-<div class="chat" id="chat">
-  <div class="msg">
-    <b>La Raza 98.7</b><br>
-    <span>Cargando mensajes...</span>
+    <div class="chatrow">
+      <input id="name" placeholder="Tu nombre" maxlength="30">
+      <input id="text" placeholder="Escribe un mensaje..." maxlength="160">
+      <button class="btn" id="sendBtn" onclick="sendMsg()">Enviar</button>
+    </div>
+
+    <p class="note" id="chatNote">Conectando chat...</p>
   </div>
-</div>
 
-<div class="chatrow">
+  <!-- PLATAFORMAS DE STREAMING -->
+  <div class="panel" style="display:flex; flex-direction:column; justify-content:space-between;">
+    <div>
+      <h2>📻 Escúchanos en Web</h2>
+      <p style="color:#aaa; font-size:14px; line-height:1.5;">
+        También puedes sintonizar nuestra señal en vivo a través de las plataformas digitales oficiales de streaming.
+      </p>
+    </div>
 
-<input
-  id="name"
-  placeholder="Tu nombre"
-  maxlength="30"
->
+    <div class="links">
+      <a class="link" href="https://zeno.fm/radio/la-raza-98-7-santa-ana/" target="_blank">Zeno.FM</a>
+      <a class="link" href="https://tunein.com/radio/La-Raza-987-FM-Santa-Ana-s268039/" target="_blank">TuneIn</a>
+    </div>
 
-<input
-  id="text"
-  placeholder="Escribe un mensaje..."
-  maxlength="160"
->
-
-<button class="btn" id="sendBtn" onclick="sendMsg()">
-Enviar
-</button>
-
-</div>
-
-<p class="note" id="chatNote">
-Conectando chat...
-</p>
-
-</div>
-
-<!-- FACEBOOK EN VIVO (LA RAZA 98.7) -->
-<div class="panel">
-
-<h2>📢 Facebook La Raza 98.7 FM</h2>
-
-<div class="social-feed-container">
-  <div 
-    class="fb-page" 
-    data-href="https://www.facebook.com/LaRaza98.7" 
-    data-tabs="timeline" 
-    data-width="500" 
-    data-height="380" 
-    data-small-header="true" 
-    data-adapt-container-width="true" 
-    data-hide-cover="false" 
-    data-show-facepile="false">
-    <blockquote cite="https://www.facebook.com/LaRaza98.7" class="fb-xfbml-parse-ignore">
-      <a href="https://www.facebook.com/LaRaza98.7">Cargando muro de La Raza 98.7 FM...</a>
-    </blockquote>
+    <div class="admin">
+      <details>
+        <summary>⚙️ Conectar stream</summary>
+        <input id="streamUrl" value="https://stream.zeno.fm/jhc9slvhxzetv" placeholder="URL directa del stream">
+        <button class="btn" onclick="setStream()">Conectar</button>
+      </details>
+    </div>
   </div>
-</div>
-
-<div class="links">
-
-<a
-  class="link"
-  href="https://zeno.fm/radio/la-raza-98-7-santa-ana/"
-  target="_blank"
->
-Zeno.FM
-</a>
-
-<a
-  class="link"
-  href="https://tunein.com/radio/La-Raza-987-FM-Santa-Ana-s268039/"
-  target="_blank"
->
-TuneIn
-</a>
 
 </div>
 
-<div class="admin">
+<!-- FILA 2: FACEBOOKS LADO A LADO -->
+<div class="grid">
 
-<details>
-
-<summary>
-⚙️ Conectar stream
-</summary>
-
-<input
-  id="streamUrl"
-  value="https://stream.zeno.fm/jhc9slvhxzetv"
-  placeholder="URL directa del stream"
->
-
-<button class="btn" onclick="setStream()">
-Conectar
-</button>
-
-</details>
-
-</div>
-
-</div>
-
-</div>
-
-<!-- NUEVA SECCIÓN: PERIÓDICO / NOTICIAS CON LA LLAVE DEL DESIERTO -->
-<div class="panel" style="margin-top: 20px;">
-
-<h2>📰 Noticias: La Llave del Desierto</h2>
-
-<div class="social-feed-container" style="height: 500px;">
-  <div 
-    class="fb-page" 
-    data-href="https://www.facebook.com/LlaveDelDesierto" 
-    data-tabs="timeline" 
-    data-width="800" 
-    data-height="500" 
-    data-small-header="false" 
-    data-adapt-container-width="true" 
-    data-hide-cover="false" 
-    data-show-facepile="false">
-    <blockquote cite="https://www.facebook.com/LlaveDelDesierto" class="fb-xfbml-parse-ignore">
-      <a href="https://www.facebook.com/LlaveDelDesierto">Cargando noticias de La Llave del Desierto...</a>
-    </blockquote>
+  <!-- MURO PRINCIPAL: LA LLAVE DEL DESIERTO -->
+  <div class="panel">
+    <h2>📰 Noticias: La Llave del Desierto</h2>
+    <div class="social-feed-container">
+      <div 
+        class="fb-page" 
+        data-href="https://www.facebook.com/LlaveDelDesierto" 
+        data-tabs="timeline" 
+        data-width="500" 
+        data-height="400" 
+        data-small-header="false" 
+        data-adapt-container-width="true" 
+        data-hide-cover="false" 
+        data-show-facepile="false">
+        <blockquote cite="https://www.facebook.com/LlaveDelDesierto" class="fb-xfbml-parse-ignore">
+          <a href="https://www.facebook.com/LlaveDelDesierto">Cargando noticias de La Llave del Desierto...</a>
+        </blockquote>
+      </div>
+    </div>
   </div>
-</div>
+
+  <!-- MURO SECUNDARIO: LA RAZA 98.7 FM -->
+  <div class="panel">
+    <h2>📢 Facebook: La Raza 98.7 FM</h2>
+    <div class="social-feed-container">
+      <div 
+        class="fb-page" 
+        data-href="https://www.facebook.com/LaRaza98.7" 
+        data-tabs="timeline" 
+        data-width="500" 
+        data-height="400" 
+        data-small-header="false" 
+        data-adapt-container-width="true" 
+        data-hide-cover="false" 
+        data-show-facepile="false">
+        <blockquote cite="https://www.facebook.com/LaRaza98.7" class="fb-xfbml-parse-ignore">
+          <a href="https://www.facebook.com/LaRaza98.7">Cargando muro de La Raza 98.7 FM...</a>
+        </blockquote>
+      </div>
+    </div>
+  </div>
 
 </div>
 
