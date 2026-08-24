@@ -78,13 +78,13 @@ body{
   box-shadow:0 0 12px #e31b23
 }
 
-/* SECCIÓN SUPERIOR DE LOGOS UNIFICADOS */
+/* SECCIÓN SUPERIOR DE LOGOS - ESTILO HISTORIAS DE FACEBOOK */
 .header-logos{
   display:flex;
   justify-content:center;
   align-items:center;
-  gap:18px;
-  margin:15px 0 20px;
+  gap:20px;
+  margin:15px 0 25px;
   flex-wrap:wrap;
 }
 
@@ -105,21 +105,30 @@ body{
   color:#fff;
 }
 
-.logo-img{
-  width:110px;
-  height:110px;
-  object-fit:cover;
-  background:#000;
-  border-radius:22px;
-  padding:4px;
-  box-shadow:0 8px 24px rgba(0, 0, 0, 0.5);
-  border:2px solid #2b2b2b;
+/* EFECTO ANILLO DE HISTORIA */
+.story-ring {
+  padding:3px;
+  border-radius:50%;
+  background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
 }
 
-/* Destacado leve para el logo principal */
-.logo-item.main .logo-img{
-  border-color:#e31b23;
-  box-shadow:0 8px 32px rgba(227, 27, 35, 0.35);
+.logo-item.main .story-ring {
+  background: linear-gradient(45deg, #e31b23, #ff3b30, #ff9500);
+  box-shadow: 0 0 18px rgba(227, 27, 35, 0.6);
+}
+
+.logo-img{
+  width:95px;
+  height:95px;
+  object-fit:cover;
+  background:#000;
+  border-radius:50%;
+  border:3px solid #151515;
+  display:block;
 }
 
 h1{
@@ -363,8 +372,8 @@ audio{
   }
 
   .logo-img{
-    width:85px;
-    height:85px;
+    width:75px;
+    height:75px;
   }
 
   .stats{
@@ -398,32 +407,38 @@ audio{
   </div>
 </div>
 
-<!-- TRES LOGOS DEL MISMO TAMAÑO -->
+<!-- TRES LOGOS CON URLS DE TU ALMACENAMIENTO EN SUPABASE -->
 <div class="header-logos">
   <a href="https://www.facebook.com/LaRaza98.7" target="_blank" class="logo-item main" title="La Raza 98.7 FM">
-    <img
-      class="logo-img"
-      src="https://graph.facebook.com/LaRaza98.7/picture?type=large"
-      alt="La Raza 98.7 FM"
-    >
+    <div class="story-ring">
+      <img
+        class="logo-img"
+        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20raza.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIHJhemEuanBnIiwic2NvcGUiOiJkb3dubG9hZCIsImlhdCI6MTc4NzYwMDY4NiwiZXhwIjoxODE5MTM2Njg2fQ.roNp8GWLBwOEOkqY16wAxUxir085ehOkHLCUHS-od0Q"
+        alt="La Raza 98.7 FM"
+      >
+    </div>
     <span>La Raza 98.7 FM</span>
   </a>
 
   <a href="https://www.facebook.com/LlaveDelDesierto" target="_blank" class="logo-item" title="La Llave del Desierto">
-    <img
-      class="logo-img"
-      src="https://graph.facebook.com/LlaveDelDesierto/picture?type=large"
-      alt="La Llave del Desierto"
-    >
+    <div class="story-ring">
+      <img
+        class="logo-img"
+        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20llave%20del%20desierto.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIGxsYXZlIGRlbCBkZXNpZXJ0by5qcGciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg3NjAwNjY4LCJleHAiOjE4MTkxMzY2Njh9.6nYyzMLWVxusPS3BIxoF5EhVelI3oBJckKcjTy2_2GU"
+        alt="La Llave del Desierto"
+      >
+    </div>
     <span>La Llave del Desierto</span>
   </a>
 
   <a href="https://www.facebook.com/lucia.arriola.520" target="_blank" class="logo-item" title="Poder Noticias">
-    <img
-      class="logo-img"
-      src="https://i.imgur.com/kS94bE2.jpeg"
-      alt="Poder Noticias"
-    >
+    <div class="story-ring">
+      <img
+        class="logo-img"
+        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/poder%20noticias.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL3BvZGVyIG5vdGljaWFzLmpwZyIsInNjb3BlIjoiZG93bmxvYWQiLCJpYXQiOjE3ODc2MDA3MTksImV4cCI6MTgxOTEzNjcxOX0.r1SHww61TiMRDqCcjWYLONnEdKE4PGMA9itnAiAPM3M"
+        alt="Poder Noticias"
+      >
+    </div>
     <span>Poder Noticias</span>
   </a>
 </div>
