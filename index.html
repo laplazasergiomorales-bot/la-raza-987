@@ -78,6 +78,20 @@ body{
   box-shadow:0 0 12px #e31b23
 }
 
+/* WIDGET DEL CLIMA */
+.weather-badge {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: bold;
+  color: #ff9500;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* LOGOS SUPERIORES */
 .header-logos{
   display:flex;
@@ -166,7 +180,6 @@ audio{
   margin:10px 0 0
 }
 
-/* CONTADORES DE OYENTES Y RATING */
 .stats-double{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -250,6 +263,91 @@ audio{
   gap:8px;
 }
 
+/* VOTACIONES ESTILO ENCUESTA */
+.poll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.poll-item {
+  background: #151515;
+  border: 1px solid #282828;
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(227, 27, 35, 0.15);
+  border-right: 2px solid var(--accent);
+  transition: width 0.4s ease;
+  z-index: 1;
+}
+
+.poll-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.song-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.song-title {
+  font-weight: bold;
+  font-size: 15px;
+}
+
+.song-artist {
+  font-size: 12px;
+  color: #aaa;
+}
+
+.vote-btn {
+  background: #252525;
+  border: 1px solid #444;
+  color: #fff;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.vote-btn:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.vote-btn.voted {
+  background: #444;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.poll-meta {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  color: #888;
+}
+
 .chat{
   height:320px;
   overflow:auto;
@@ -279,7 +377,7 @@ audio{
   margin-top:10px
 }
 
-.chatrow input{
+.chatrow input, .form-input{
   flex:1;
   background:#171717;
   color:#fff;
@@ -393,7 +491,6 @@ audio{
 
 <body>
 
-<!-- SDK oficial de Facebook -->
 <div id="fb-root"></div>
 <script async defer crossorigin="anonymous" src="https://connect.facebook.net/es_LA/sdk.js#xfbml=1&version=v18.0"></script>
 
@@ -404,6 +501,10 @@ audio{
   <div class="badge">
     <span class="dot"></span>
     TRANSMISIÓN EN VIVO
+  </div>
+  <!-- WIDGET CLIMA -->
+  <div class="weather-badge" id="weatherWidget">
+    <span>🌡️ Cargando clima...</span>
   </div>
 </div>
 
@@ -424,7 +525,7 @@ audio{
     <div class="story-ring">
       <img
         class="logo-img"
-        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20llave%20del%20desierto.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIGxsYXZlIGRlbCBkZXNpZXJ0by5qcGciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg3NjAwNjY4LCJleHAiOjE4MTkxMzY2Njh9.6nYyzMLWVxusPS3BIxoF5EhVelI3oBJckKcjTy2_2GU"
+        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20llave%20del%20desierto.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIGxsYXZlIGRlbCBkZXNpZXJ0by5qcGciLCJzY29wZSI6ImRvd25lopFkIiwiaWF0IjoxNzg3NjAwNjY4LCJleHAiOjE4MTkxMzY2Njh9.6nYyzMLWVxusPS3BIxoF5EhVelI3oBJckKcjTy2_2GU"
         alt="La Llave del Desierto"
       >
     </div>
@@ -472,7 +573,7 @@ audio{
   </a>
 </div>
 
-<!-- CONTADORES: ESCUCHANDO Y RATING HOY -->
+<!-- CONTADORES -->
 <div class="stats-double">
   <div class="stat">
     <div class="num" id="listeners">5</div>
@@ -484,7 +585,28 @@ audio{
   </div>
 </div>
 
-<!-- SECCIÓN 1: CHAT EN VIVO -->
+<!-- NUEVA SECCIÓN: TOP CANCIONES Y VOTACIÓN -->
+<div class="panel" style="margin-top: 20px;">
+  <h2>🔥 Las Más Sonadas - Votación en Vivo</h2>
+  <p style="color:#aaa; font-size:13px; margin-top:-5px; margin-bottom:15px;">
+    ¡Vota por tu tema favorito! Los resultados se actualizan al instante para todos.
+  </p>
+
+  <div class="poll-list" id="pollList">
+    <div style="color:#888; font-size:13px; text-align:center; padding:10px;">Cargando lista de éxitos...</div>
+  </div>
+
+  <div style="margin-top:20px; border-top:1px solid #222; padding-top:15px;">
+    <h3 style="font-size:15px; margin:0 0 10px; color:#ddd;">➕ Proponer una canción</h3>
+    <div class="chatrow">
+      <input class="form-input" id="newSongTitle" placeholder="Nombre de la canción">
+      <input class="form-input" id="newSongArtist" placeholder="Artista / Grupo">
+      <button class="btn" onclick="proponerCancion()">Agregar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CHAT EN VIVO -->
 <div class="panel" style="margin-top: 20px;">
   <h2>💬 Chat en vivo</h2>
   <div class="chat" id="chat">
@@ -502,10 +624,8 @@ audio{
   <p class="note" id="chatNote">Conectando chat...</p>
 </div>
 
-<!-- SECCIÓN 2: FACEBOOKS LADO A LADO -->
+<!-- REDES Y NOTICIAS -->
 <div class="grid">
-
-  <!-- MURO PRINCIPAL: LA LLAVE DEL DESIERTO -->
   <div class="panel">
     <h2>📰 Noticias: La Llave del Desierto</h2>
     <div class="social-feed-container">
@@ -519,14 +639,10 @@ audio{
         data-adapt-container-width="true" 
         data-hide-cover="false" 
         data-show-facepile="false">
-        <blockquote cite="https://www.facebook.com/LlaveDelDesierto" class="fb-xfbml-parse-ignore">
-          <a href="https://www.facebook.com/LlaveDelDesierto">Cargando noticias de La Llave del Desierto...</a>
-        </blockquote>
       </div>
     </div>
   </div>
 
-  <!-- MURO SECUNDARIO: LA RAZA 98.7 FM -->
   <div class="panel">
     <h2>📢 Facebook: La Raza 98.7 FM</h2>
     <div class="social-feed-container">
@@ -540,22 +656,14 @@ audio{
         data-adapt-container-width="true" 
         data-hide-cover="false" 
         data-show-facepile="false">
-        <blockquote cite="https://www.facebook.com/LaRaza98.7" class="fb-xfbml-parse-ignore">
-          <a href="https://www.facebook.com/LaRaza98.7">Cargando muro de La Raza 98.7 FM...</a>
-        </blockquote>
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- SECCIÓN 3: PLATAFORMAS WEB AL FINAL -->
+<!-- PLATAFORMAS WEB -->
 <div class="panel" style="margin-top:20px;">
   <h2>📻 Escúchanos en otras Plataformas Web</h2>
-  <p style="color:#aaa; font-size:14px; margin-bottom:12px;">
-    También puedes sintonizar nuestra señal en vivo desde tus aplicaciones o directorios web favoritos:
-  </p>
-
   <div class="links">
     <a class="link" href="https://zeno.fm/radio/la-raza-98-7-santa-ana/" target="_blank">Escuchar en Zeno.FM</a>
     <a class="link" href="https://tunein.com/radio/La-Raza-987-FM-Santa-Ana-s268039/" target="_blank">Escuchar en TuneIn</a>
@@ -577,20 +685,18 @@ audio{
 </section>
 </main>
 
-
 <script>
 
 /* ================================
-   INICIALIZACIÓN DE SUPABASE SDK
+   SUPABASE CONFIGURACIÓN
 ================================ */
-
 const SUPABASE_URL = "https://rbnwtqtmllydujcvqlbe.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_zcjOw4zzj94L78CUfH2F3A_mZFsabqR";
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let isListening = false;
 let localMsgs = JSON.parse(localStorage.getItem("lr_msgs") || "[]");
+let votedSongs = JSON.parse(localStorage.getItem("raza_voted_songs") || "[]");
 
 let sessionId = localStorage.getItem("raza_session");
 if (!sessionId) {
@@ -599,25 +705,123 @@ if (!sessionId) {
 }
 
 function esc(s){
-  return String(s).replace(
-    /[&<>"']/g,
-    x => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[x])
-  );
+  return String(s).replace(/[&<>"']/g, x => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[x]));
 }
 
 
 /* ================================
-   1. PRESENCIA Y OYENTES EN VIVO
+   1. CLIMA EN VIVO (SANTA ANA, SONORA)
 ================================ */
+async function cargarClima() {
+  const widget = document.getElementById("weatherWidget");
+  try {
+    // Coordenadas de Santa Ana, Sonora (30.54, -111.12)
+    const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=30.54&longitude=-111.12&current_weather=true");
+    const data = await res.json();
+    const temp = Math.round(data.current_weather.temperature);
+    widget.innerHTML = `☀️ Santa Ana: <b>${temp}°C</b>`;
+  } catch (e) {
+    widget.innerHTML = `☀️ Santa Ana, Sonora`;
+  }
+}
+cargarClima();
 
+
+/* ================================
+   2. TOP CANCIONES Y VOTACIÓN
+================================ */
+async function cargarTopCanciones() {
+  try {
+    const { data, error } = await supabaseClient
+      .from("top_songs")
+      .select("*")
+      .order("votes", { ascending: false })
+      .limit(10);
+
+    if (error || !data) return;
+
+    const pollContainer = document.getElementById("pollList");
+    pollContainer.innerHTML = "";
+
+    const maxVotos = data.reduce((max, song) => song.votes > max ? song.votes : max, 1);
+    const totalVotos = data.reduce((sum, song) => sum + Number(song.votes), 0);
+
+    data.forEach((song, index) => {
+      const pct = Math.round((song.votes / (totalVotos || 1)) * 100);
+      const barWidth = Math.round((song.votes / maxVotos) * 100);
+      const yaVoto = votedSongs.includes(song.id);
+
+      const item = document.createElement("div");
+      item.className = "poll-item";
+      item.innerHTML = `
+        <div class="poll-bg" style="width: ${barWidth}%;"></div>
+        <div class="poll-content">
+          <div class="song-info">
+            <span class="song-title">#${index + 1} ${esc(song.title)}</span>
+            <span class="song-artist">${esc(song.artist)}</span>
+          </div>
+          <button class="vote-btn ${yaVoto ? 'voted' : ''}" onclick="votarCancion(${song.id}, ${song.votes})" ${yaVoto ? 'disabled' : ''}>
+            ${yaVoto ? '✓ Votado' : '👍 Votar'}
+          </button>
+        </div>
+        <div class="poll-meta">
+          <span>${song.votes} votos</span>
+          <span>${pct}% del total</span>
+        </div>
+      `;
+      pollContainer.appendChild(item);
+    });
+
+  } catch(e) {}
+}
+
+async function votarCancion(id, votosActuales) {
+  if (votedSongs.includes(id)) return;
+
+  votedSongs.push(id);
+  localStorage.setItem("raza_voted_songs", JSON.stringify(votedSongs));
+
+  await supabaseClient
+    .from("top_songs")
+    .update({ votes: votosActuales + 1 })
+    .eq("id", id);
+
+  cargarTopCanciones();
+}
+
+async function proponerCancion() {
+  const tInput = document.getElementById("newSongTitle");
+  const aInput = document.getElementById("newSongArtist");
+
+  const title = tInput.value.trim();
+  const artist = aInput.value.trim();
+
+  if (!title || !artist) return;
+
+  await supabaseClient
+    .from("top_songs")
+    .insert([{ title: title, artist: artist, votes: 1 }]);
+
+  tInput.value = "";
+  aInput.value = "";
+  cargarTopCanciones();
+}
+
+// Suscripción Realtime para actualizar los votos al instante en todas las pantallas
+supabaseClient
+  .channel('public:top_songs')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'top_songs' }, () => {
+    cargarTopCanciones();
+  })
+  .subscribe();
+
+cargarTopCanciones();
+
+
+/* ================================
+   3. PRESENCIA Y OYENTES EN VIVO
+================================ */
 const MIN_LISTENERS = 5;
-
 const channel = supabaseClient.channel('radio-room');
 
 channel
@@ -626,20 +830,13 @@ channel
     let realListeners = 0;
 
     for (const key in state) {
-      state[key].forEach(user => {
-        if (user.is_listening) {
-          realListeners++;
-        }
-      });
+      state[key].forEach(user => { if (user.is_listening) realListeners++; });
     }
 
-    const totalShown = realListeners + MIN_LISTENERS;
-    document.getElementById("listeners").textContent = totalShown;
+    document.getElementById("listeners").textContent = realListeners + MIN_LISTENERS;
   })
   .subscribe(async (status) => {
-    if (status === 'SUBSCRIBED') {
-      await updatePresence();
-    }
+    if (status === 'SUBSCRIBED') await updatePresence();
   });
 
 async function updatePresence() {
@@ -648,63 +845,40 @@ async function updatePresence() {
     is_listening: isListening,
     online_at: new Date().toISOString()
   });
-
-  try {
-    await supabaseClient
-      .from("visits")
-      .upsert({ session_id: sessionId, last_seen: new Date().toISOString(), is_listening: isListening }, { onConflict: "session_id" });
-  } catch(e) {}
 }
 
 
 /* ================================
-   2. RATING HOY GLOBAL Y CENTRALIZADO (SUPABASE)
+   4. RATING HOY GLOBAL
 ================================ */
-
 async function procesarRatingGlobal() {
   const todayDateStr = new Date().toISOString().slice(0, 10);
   const ratingEl = document.getElementById("todayRating");
 
   try {
-    // 1. Consultar el registro del día de hoy en Supabase
-    let { data, error } = await supabaseClient
+    let { data } = await supabaseClient
       .from("daily_ratings")
       .select("*")
       .eq("rating_date", todayDateStr)
       .maybeSingle();
 
     let count = 1;
-
     if (data) {
-      // 2. Si ya existe el día, se incrementa en 1
       count = data.count + 1;
-      await supabaseClient
-        .from("daily_ratings")
-        .update({ count: count })
-        .eq("rating_date", todayDateStr);
+      await supabaseClient.from("daily_ratings").update({ count: count }).eq("rating_date", todayDateStr);
     } else {
-      // 3. Si es un nuevo día, se crea el primer registro
-      await supabaseClient
-        .from("daily_ratings")
-        .insert([{ rating_date: todayDateStr, count: 1 }]);
+      await supabaseClient.from("daily_ratings").insert([{ rating_date: todayDateStr, count: 1 }]);
     }
-
     ratingEl.textContent = count;
   } catch (err) {
-    // Modo de respaldo local si falla la red
-    let fallbackCount = parseInt(localStorage.getItem("raza_fallback_rating") || "5") + 1;
-    localStorage.setItem("raza_fallback_rating", fallbackCount);
-    ratingEl.textContent = fallbackCount;
+    ratingEl.textContent = "1";
   }
 }
 
-// Escuchar cambios de Rating en vivo para que el número aumente si alguien más entra
 supabaseClient
   .channel('public:daily_ratings')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'daily_ratings' }, payload => {
-    if (payload.new && payload.new.count) {
-      document.getElementById("todayRating").textContent = payload.new.count;
-    }
+    if (payload.new && payload.new.count) document.getElementById("todayRating").textContent = payload.new.count;
   })
   .subscribe();
 
@@ -712,9 +886,8 @@ procesarRatingGlobal();
 
 
 /* ================================
-   3. GESTIÓN DEL CHAT EN TIEMPO REAL
+   5. CHAT EN TIEMPO REAL
 ================================ */
-
 function renderMessages(msgs) {
   const chatEl = document.getElementById("chat");
   chatEl.innerHTML = "";
@@ -730,7 +903,6 @@ function renderMessages(msgs) {
     d.innerHTML = "<b>" + esc(m.name || m.n || "Visitante") + "</b><br><span>" + esc(m.text || m.t || "") + "</span>";
     chatEl.appendChild(d);
   });
-
   chatEl.scrollTop = chatEl.scrollHeight;
 }
 
@@ -742,24 +914,17 @@ async function cargarMensajes(){
       .order("created_at", { ascending: false })
       .limit(50);
 
-    if (error) {
-      renderMessages(localMsgs);
-      document.getElementById("chatNote").textContent = "💬 Conectado en modo directo.";
-    } else {
-      const dbMsgs = [...data].reverse();
-      renderMessages(dbMsgs);
+    if (error) renderMessages(localMsgs);
+    else {
+      renderMessages([...data].reverse());
       document.getElementById("chatNote").textContent = "💬 Chat conectado en tiempo real.";
     }
-  } catch (error) {
-    renderMessages(localMsgs);
-  }
+  } catch (error) { renderMessages(localMsgs); }
 }
 
 supabaseClient
   .channel('public:messages')
-  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-    cargarMensajes();
-  })
+  .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, () => cargarMensajes())
   .subscribe();
 
 async function sendMsg(){
@@ -768,12 +933,9 @@ async function sendMsg(){
 
   let nameVal = nameInput.value.trim() || "Visitante";
   let textVal = textInput.value.trim();
-
   if(!textVal) return;
 
-  await supabaseClient
-    .from("messages")
-    .insert([{ name: nameVal, text: textVal }]);
+  await supabaseClient.from("messages").insert([{ name: nameVal, text: textVal }]);
 
   localMsgs.push({ n: nameVal, t: textVal });
   if(localMsgs.length > 50) localMsgs.shift();
@@ -785,41 +947,22 @@ async function sendMsg(){
 
 
 /* ================================
-   4. CONTROLES DEL REPRODUCTOR
+   6. CONTROLES DE REPRODUCCIÓN
 ================================ */
-
 function setStream(){
   const streamUrlInput = document.getElementById("streamUrl");
   const streamEl = document.getElementById("stream");
   const radioEl = document.getElementById("radio");
-  const statusEl = document.getElementById("status");
-
   let u = streamUrlInput.value.trim();
   if(!u) return;
-
   streamEl.src = u;
   radioEl.load();
-  statusEl.textContent = "Stream configurado. Presiona ▶️ para escuchar.";
 }
 
 const radio = document.getElementById("radio");
-
-radio.addEventListener("play", () => {
-  isListening = true;
-  document.getElementById("status").textContent = "Reproduciendo en vivo en este dispositivo.";
-  updatePresence();
-});
-
-radio.addEventListener("pause", () => {
-  isListening = false;
-  document.getElementById("status").textContent = "Reproducción pausada.";
-  updatePresence();
-});
-
-radio.addEventListener("ended", () => {
-  isListening = false;
-  updatePresence();
-});
+radio.addEventListener("play", () => { isListening = true; updatePresence(); });
+radio.addEventListener("pause", () => { isListening = false; updatePresence(); });
+radio.addEventListener("ended", () => { isListening = false; updatePresence(); });
 
 cargarMensajes();
 
