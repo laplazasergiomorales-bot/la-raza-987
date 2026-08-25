@@ -525,7 +525,7 @@ audio{
     <div class="story-ring">
       <img
         class="logo-img"
-        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20llave%20del%20desierto.jpg?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV9mY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIGxsYXZlIGRlbCBkZXNpZXJ0by5qcGciLCJzY29wZSI6ImRvd25lopFkIiwiaWF0IjoxNzg3NjAwNjY4LCJleHAiOjE4MTkxMzY2Njh9.6nYyzMLWVxusPS3BIxoF5EhVelI3oBJckKcjTy2_2GU"
+        src="https://rbnwtqtmllydujcvqlbe.supabase.co/storage/v1/object/sign/logo/la%20llave%20del%20desierto.jpg?token=eyJraWQiOiJmY2M0MmJiZi04NzU1LTRmZTktODQ0Zi02MTkzNTFjNDBjY2IiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJsb2dvL2xhIGxsYXZlIGRlbCBkZXNpZXJ0by5qcGciLCJzY29wZSI6ImRvd25sb2FkIiwiaWF0IjoxNzg3NjkxMDQ4LCJleHAiOjE4NTA3NjMwNDh9.Do_AyN4w45_0eSCAVRpMtMNqXOzPfFXXG2WT7Nkxwzg"
         alt="La Llave del Desierto"
       >
     </div>
@@ -585,7 +585,7 @@ audio{
   </div>
 </div>
 
-<!-- NUEVA SECCIÓN: TOP CANCIONES Y VOTACIÓN -->
+<!-- SECCIÓN: TOP CANCIONES Y VOTACIÓN -->
 <div class="panel" style="margin-top: 20px;">
   <h2>🔥 Las Más Sonadas - Votación en Vivo</h2>
   <p style="color:#aaa; font-size:13px; margin-top:-5px; margin-bottom:15px;">
@@ -715,7 +715,6 @@ function esc(s){
 async function cargarClima() {
   const widget = document.getElementById("weatherWidget");
   try {
-    // Coordenadas de Santa Ana, Sonora (30.54, -111.12)
     const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=30.54&longitude=-111.12&current_weather=true");
     const data = await res.json();
     const temp = Math.round(data.current_weather.temperature);
@@ -807,7 +806,6 @@ async function proponerCancion() {
   cargarTopCanciones();
 }
 
-// Suscripción Realtime para actualizar los votos al instante en todas las pantallas
 supabaseClient
   .channel('public:top_songs')
   .on('postgres_changes', { event: '*', schema: 'public', table: 'top_songs' }, () => {
